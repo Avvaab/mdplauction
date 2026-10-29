@@ -1063,8 +1063,14 @@ function presentFallback(){ toast('Full screen was blocked here. Press F11 (Wind
 function onFsChange(){ const fs=document.fullscreenElement||document.webkitFullscreenElement; if(!fs){ document.body.classList.remove('presenting'); if(view.role==='big') render(); } }
 document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 // ================== shell render ==================
+const IN_APP = /WhatsApp|Instagram|FBAN|FBAV|FB_IAB|Line\/|Snapchat|LinkedInApp|; wv\)/i.test(navigator.userAgent||'');
 function signInCard(){
   const u=view.user;
+  if(IN_APP && !u) return `<section class="panel signin"><img src="${LOGOS.mdpl}" alt="">
+    <h2>Open this in Safari or Chrome to sign in</h2>
+    <p class="muted">Google sign-in doesn’t work inside WhatsApp or Instagram’s built-in browser. Tap the <b>⋯</b> or share icon and choose <b>Open in Safari</b> (or Chrome), or copy the link below into your browser.</p>
+    <p><b style="user-select:all">${esc(location.origin+'/')}</b></p>
+    <div class="go-row"><button class="btn gold" id="copyLink">Copy link</button><button class="btn" id="openBig">Watch the big screen here</button></div></section>`;
   return `<section class="panel signin"><img src="${LOGOS.mdpl}" alt="">
     <h2>${u?'This account can’t run the auction':'Auctioneer sign-in'}</h2>
     <p class="muted">${u?`You’re signed in as <b>${esc(u.email)}</b>, which isn’t on the auctioneer list. You can still watch the big screen.`:'Sign in with the Google account that’s allowed to run the MDPL auction. Anyone can watch the big screen without signing in.'}</p>
@@ -1219,6 +1225,8 @@ function salesCsv(s){
 document.addEventListener('click', e=>{
   const t=e.target.closest('button'); if(!t) return;
   const s=Store.get();
+  if(t.id==='copyLink'){ try{ navigator.clipboard.writeText(location.origin+'/').then(()=>toast('Link copied. Paste it into Safari or Chrome.'),()=>toast('Press and hold the link above to copy it')); }catch(_){ toast('Press and hold the link above to copy it'); } return; }
+  if((t.id==='signInBtn'||t.id==='signInBtn2') && IN_APP){ view.role='auc'; render(); return; }
   if(t.id==='signInBtn'||t.id==='signInBtn2'){ window.MDPL_WEB.ready.then(w=>w.signIn()).catch(e=>toast('Sign-in didn’t finish: '+(e&&(e.code||e.message)||'try again'))); return; }
   if(t.id==='signOutBtn'||t.id==='signOutBtn2'){ window.MDPL_WEB.ready.then(w=>w.signOut()); return; }
   if(t.id==='openBig'){ view.role='big'; ssSet('role','big'); return render(); }
