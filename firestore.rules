@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The auction state: anyone can watch, only listed auctioneers can change it.
+    match /state/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email_verified == true
+                   && request.auth.token.email.lower() in [];
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
