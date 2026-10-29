@@ -618,7 +618,7 @@ function defaultConfig(){
       {id:'sourathiya-stars', name:'Sorathiya Stars', color:'#C9A063', logo:'sour'},
       {id:'mahim-royal-hawks', name:'Mahim Royal Hawks', color:'#C0344F', logo:'hawks'},
       {id:'mahim-warriors', name:'Mahim Warriors', color:'#5BAA2A', logo:'warriors'},
-      {id:'gods-gift', name:"God's Gift", color:'#E5483B', logo:'gods'},
+      {id:'gods-gift', name:"God's Gift Boys", color:'#E5483B', logo:'gods'},
     ],
     players,
   };
@@ -631,6 +631,7 @@ function migrate(st){
   for(const t of (st.config&&st.config.teams)||[]){
     if(t.id==='rc-11' && t.name==='RC 11'){ t.name='RC Tigers'; t.color='#D4A62A'; }
     if(t.id==='sourathiya-stars' && t.name==='Sourathiya Stars') t.name='Sorathiya Stars';
+    if(t.id==='gods-gift' && t.name==="God's Gift") t.name="God's Gift Boys";
   }
   return st;
 }
