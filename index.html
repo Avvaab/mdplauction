@@ -553,6 +553,22 @@ body.presenting .bt .crest{width:clamp(34px,min(30cqi,7vh),80px);height:clamp(34
 .bs-spons .sp{width:clamp(90px,7.6vw,148px);height:clamp(66px,5.4vw,104px)}
 body.presenting .bs-present{display:none}
 
+/* top 10 buys */
+.tp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-template-rows:repeat(5,auto);gap:clamp(8px,1vw,16px)}
+.tp-r{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;gap:clamp(10px,1vw,18px);align-items:center;padding:clamp(8px,.9vw,14px) clamp(12px,1.2vw,20px);border-left:6px solid var(--tc)}
+.tp-n{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,2vw,36px);color:var(--muted);min-width:1.4em;text-align:center}
+.tp-1 .tp-n,.tp-2 .tp-n,.tp-3 .tp-n{color:var(--gold)}
+.tp-1{background:linear-gradient(90deg,rgba(255,201,61,.18),rgba(255,255,255,.04))}
+.tp-r .av{width:clamp(48px,4.2vw,76px);height:clamp(48px,4.2vw,76px);font-size:18px}
+.tp-who b{display:block;font-size:clamp(15px,1.3vw,22px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-who span{font-size:clamp(11px,.85vw,14px);color:var(--muted)}
+.tp-tm{display:flex;align-items:center;gap:8px;font-size:clamp(11px,.9vw,15px);font-weight:600;max-width:12vw}
+.tp-tm .crest{width:clamp(28px,2.4vw,42px);height:clamp(28px,2.4vw,42px);flex-shrink:0}
+.tp-tm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-r em{font-style:normal;font-family:var(--f-display);font-weight:800;color:var(--gold);font-size:clamp(18px,1.7vw,30px);white-space:nowrap}
+.tp-empty{padding:40px;text-align:center;color:var(--muted);font-size:18px}
+@media (max-width:860px){ .tp-grid{grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none} .tp-tm span{display:none} }
+
 </style>
 <script>
   // Who may run the auction (Google accounts). Keep in step with firestore.rules.
@@ -923,7 +939,7 @@ function viewConsole(s){
   const log = `<div class="panel log"><div class="sec-head" style="margin-bottom:6px"><h3 style="font-size:17px">Sales · ${rows.length}</h3><button class="btn" id="undoSale" ${rows.length?'':'disabled'} style="margin-left:auto">Undo last sale</button></div>
     ${rows.length?`<table><thead><tr><th>#</th><th>Player</th><th>Cat</th><th>Team</th><th>Price</th><th>How</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${rows.length-i}</td><td>${esc(P[x.player]?P[x.player].name:x.player)}</td><td>${esc(catByK(s,x.cat)?catByK(s,x.cat).short:x.cat)}</td><td><span class="tm">${crest(s,x.team)}${esc(T[x.team]?T[x.team].name:x.team)}</span></td><td>${fmt(x.price)}</td><td>${x.how==='manual'?'Manual':'Bid'}${x.round===2?' · R2':''}</td></tr>`).join('')}</tbody></table>`:'<p class="empty-note">No sales yet.</p>'}</div>`;
   const sc=scr(s);
-  const switcher = `<div class="panel screen-ctl"><span class="eyebrow">Big screen shows</span><div class="seg"><button data-screen="live" aria-pressed="${sc.view==='live'}">Live</button><button data-screen="squads" data-cat="${sc.cat||'all'}" aria-pressed="${sc.view==='squads'}">All squads</button><button data-screen="unsold" aria-pressed="${sc.view==='unsold'}">Unsold</button></div>
+  const switcher = `<div class="panel screen-ctl"><span class="eyebrow">Big screen shows</span><div class="seg"><button data-screen="live" aria-pressed="${sc.view==='live'}">Live</button><button data-screen="squads" data-cat="${sc.cat||'all'}" aria-pressed="${sc.view==='squads'}">All squads</button><button data-screen="unsold" aria-pressed="${sc.view==='unsold'}">Unsold</button><button data-screen="top" aria-pressed="${sc.view==='top'}">Top 10 buys</button></div>
     <select id="screenTeam" aria-label="Show a team's squad"><option value="">Show a team…</option>${s.config.teams.map(t=>`<option value="${t.id}" ${sc.view==='team'&&sc.team===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
     ${sc.view==='squads'?catTabs(s, sc.cat||'all'):''}</div>`;
   return `<div class="panel howto"><span><b>Big screen:</b> open this same link in another tab and choose <b>Big screen</b>, then drag that tab to the projector.</span><span>Keys: <kbd>1</kbd>–<kbd>9</kbd> team bids · <kbd>U</kbd> undo bid · <kbd>S</kbd> sold · <kbd>N</kbd> next player</span></div>${switcher}
@@ -979,7 +995,7 @@ function scr(s){
 }
 function viewBig(s){
   const sc=scr(s);
-  const body = sc.view==='squads' ? viewSquads(s) : sc.view==='unsold' ? viewUnsold(s) : sc.view==='team' && teamMap(s)[sc.team] ? viewTeam(s, sc.team) : viewLive(s);
+  const body = sc.view==='squads' ? viewSquads(s) : sc.view==='unsold' ? viewUnsold(s) : sc.view==='top' ? viewTop(s) : sc.view==='team' && teamMap(s)[sc.team] ? viewTeam(s, sc.team) : viewLive(s);
   return `${sponsorBar(s)}${body}${sc.view!=='live'?'<button class="btn bs-back" data-screen="live">Back to live</button>':''}
 `;
 }
@@ -1026,6 +1042,14 @@ function viewUnsold(s){
     if(!list.length) return `<div class="un-cat"><h3>${esc(c.name)} <small>no unsold players${waiting?` · ${waiting} not yet auctioned`:''}</small></h3></div>`;
     return `<div class="un-cat"><h3>${esc(c.name)} <small>${list.length} unsold · base ${fmt(c.base)}${waiting?` · ${waiting} not yet auctioned`:''}</small></h3><div class="un-grid">${list.map(p=>`<div class="panel un-p">${avatar(p)}<div><b>${esc(p.name)}</b><span>${p.num?'#'+p.num+' · ':''}${esc(p.type||'Role TBC')}</span></div></div>`).join('')}</div></div>`; }).join('');
   return `<section class="bs-page"><div class="bs-ph"><h2>Unsold players · ${un.size}</h2><span class="muted">They come back in the unsold round at base price</span></div>${groups}</section>`;
+}
+function viewTop(s){
+  const P=playerMap(s), T=teamMap(s);
+  const top=s.auction.sales.filter(x=>P[x.player]).slice().sort((x,y)=>(y.price-x.price)||(x.at-y.at)).slice(0,10);
+  const rows = top.map((x,i)=>{ const p=P[x.player], t=T[x.team], c=catByK(s,x.cat)||catByK(s,p.cat);
+    return `<div class="panel tp-r${i<3?' tp-'+(i+1):''}" style="--tc:${t?t.color:'#888'}"><span class="tp-n">${i+1}</span>${avatar(p)}<div class="tp-who"><b>${esc(p.name)}</b><span>${c?esc(c.name):''}${p.num?' · #'+p.num:''}</span></div><div class="tp-tm">${t?crest(s,t.id):''}<span>${t?esc(t.name):''}</span></div><em>${fmt(x.price)}</em></div>`; }).join('');
+  return `<section class="bs-page"><div class="bs-ph"><h2>Top 10 buys</h2><span class="muted">Highest prices so far · ${s.auction.sales.length} player${s.auction.sales.length===1?'':'s'} sold</span></div>
+    ${top.length?`<div class="tp-grid">${rows}</div>`:`<div class="panel tp-empty">No players sold yet</div>`}</section>`;
 }
 function viewTeam(s, teamId){
   const t=teamMap(s)[teamId], L=ledger(s,teamId), P=playerMap(s);
