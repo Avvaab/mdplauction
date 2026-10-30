@@ -622,7 +622,7 @@ function defaultConfig(){
     cats:[
       {k:'P', name:'Platinum', short:'Platinum', slots:3, budget:60, base:4},
       {k:'G', name:'Gold', short:'Gold', slots:4, budget:40, base:3},
-      {k:'S', name:'Silver', short:'Silver', slots:6, budget:40, base:2},
+      {k:'S', name:'Silver', short:'Silver', slots:7, budget:40, base:2},
       {k:'B', name:'Bronze', short:'Bronze', slots:1, budget:10, base:1},
     ],
     carry:true, incr:{upTo:10, low:0.5, high:1}, timer:20,
@@ -655,6 +655,11 @@ function migrate(st){
     if(p.id==='platinum-69' && p.name==='Mr Qureshi') p.name='Abdul Sattar';
     if(p.id==='silver-118' && p.name==='Irfan Khan') p.name='Mohd Irfan Mistry';
     if(p.id==='silver-139' || p.id==='silver-141') p.isNew=false;
+  }
+  // Oct 30 evening: Silver goes to 7 slots (budget stays 40), applied once
+  if(st.config && st.config.cats && !st.config.silver7){
+    st.config.silver7=true;
+    const sc=st.config.cats.find(c=>c.k==='S'); if(sc && sc.slots===6) sc.slots=7;
   }
   // late additions (Oct 30): add once to saved rosters; slot into a running order at a random spot
   if(st.config && st.config.players){
